@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.shortcuts import render
-
+from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response    
@@ -10,6 +10,12 @@ from . import serializers,models,permissions
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework import filters
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.generics import ListCreateAPIView
+
+
+
 class HelloApiView(APIView):
 
 
@@ -74,16 +80,38 @@ class HelloViewSet(viewsets.ViewSet):
 
         return Response({'http_method':'GET'})
 
-class UserProfileViewSet(viewsets.ModelViewSet):
+class UserProfileApi(ListCreateAPIView):
+    
 
     serializer_class= serializers.UserProfileSerialzer
-    queryset= models.UserProfile.objects.all()
-
-    authentication_classes=(TokenAuthentication,)
-    permission_classes=(permissions.UpdateOwnProfile,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name','email', )
-
-
-
     
+
+    def get(self, request, id):
+        if id == '':
+            queryset= models.UserProfile.objects.all()
+        else:         
+            queryset= models.UserProfile.objects.all().filter(id=id)
+        
+        authentication_classes=(TokenAuthentication,)
+        permission_classes=(permissions.UpdateOwnProfile,)
+        filter_backends = (filters.SearchFilter,)
+        search_fields = ('name','email', )
+        serializer = serializers.UserProfileSerialzer(queryset, many=True)
+        return Response(serializer.data)
+
+   
+
+class LoginViewApi(APIView):
+    serializer_class = AuthTokenSerializer
+
+    def get(self, request,format=None):
+
+        an_apiview = [
+             'LOGIN VIEW'
+         ]
+
+        return Response({'message':'Hello','an_apiview':an_apiview})
+    
+    def post(self,request):
+
+        return ObtainAuthToken().post(request)
